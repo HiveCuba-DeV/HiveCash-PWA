@@ -1,5 +1,5 @@
 // Service Worker para HiveCash - Billetera HBD Offline
-const CACHE_NAME = "hivecash-v1.2.90";
+const CACHE_NAME = "hivecash-v1.2.91";
 
 const urlsToCache = [
   "/",
@@ -13,7 +13,7 @@ const urlsToCache = [
   "/assets/index.css",
   "/assets/secp256k1.wasm",
   "/manifest.json",
-  "/qr-scanner-worker.min.js"
+  //"/qr-scanner-worker.min.js"
 ];
 
 self.addEventListener('install', event => {

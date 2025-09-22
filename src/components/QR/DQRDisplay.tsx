@@ -47,7 +47,7 @@ export const DQRDisplay: React.FC<DQRDisplayProps> = ({
 
         setTotalFragments(encoderf.fragments.length); // total para mostrar progreso
         let parts:string[]=[];
-        for (let x of encoderf.fragments ) parts.push(encoderf.nextPart());
+        for (let {} of encoderf.fragments ) parts.push(encoderf.nextPart());
         
 
         let index = 0;
