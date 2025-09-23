@@ -29,7 +29,7 @@ export const About: React.FC = () => {
           </p>
           
           <div className="flex justify-center items-center space-x-2 text-sm text-gray-500">
-            <span>{t('version')}: 1.0.0 Beta 1 </span>
+            <span>{t('version')}: 1.0.1 Beta 2 </span>
           </div>
         </Card>
 
