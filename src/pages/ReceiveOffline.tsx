@@ -1,5 +1,5 @@
 // src/pages/ReceiveOffline.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef} from 'react';
 import { useTranslation } from 'react-i18next';
 import { QrCode, Nfc } from 'lucide-react';
 import { Layout } from '../components/Layout/Layout';
@@ -18,6 +18,7 @@ export const ReceiveOffline: React.FC = () => {
   const navigate = useNavigate();
   const [fixd, setFixd] = useState(false);
   const [isrec, setIsRec] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const [showQRReader, setShowQRReader] = useState(false);
   const [showNFCReader, setShowNFCReader] = useState(false);
@@ -34,6 +35,13 @@ export const ReceiveOffline: React.FC = () => {
       setShowQRReader(false);
       setShowNFCReader(false);
       setRawInput('');
+
+      new Audio('/sounds/qrnotify.mp3').play().catch(() => { });
+
+      setTimeout(() => {
+        previewRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 0);
+
 
     } catch (err) {
       console.error('Invalid data:', err);
@@ -115,36 +123,38 @@ export const ReceiveOffline: React.FC = () => {
 
         {/* Preview del escaneado */}
         {scannedData && (
-          <Card>
-            <h3 className="text-lg font-semibold mb-4">
-              {t('paymentDetails')}
-            </h3>
-            <div className="space-y-3 mb-6">
-              <div className="flex justify-between">
-                <span className="text-gray-600">{t('amount')}:</span>
-                <span className="font-medium">
-                  {(eamount * 1e-3).toFixed(3)} HBD
-                </span>
+          <div ref={previewRef}>
+            <Card>
+              <h3 className="text-lg font-semibold mb-4">
+                {t('paymentDetails')}
+              </h3>
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">{t('amount')}:</span>
+                  <span className="font-medium">
+                    {(eamount * 1e-3).toFixed(3)} HBD
+                  </span>
+                </div>
               </div>
-            </div>
-            <div className="flex space-x-3">
-              <Button
-                variant="secondary"
-                onClick={() => setScannedData('')}
-                fullWidth
-              >
-                {t('cancel')}
-              </Button>
-              <Button
-                variant="primary"
-                disabled={isrec}
-                onClick={handleConfirmReceive}
-                fullWidth
-              >
-                {t('confirmWhenOnline')}
-              </Button>
-            </div>
-          </Card>
+              <div className="flex space-x-3">
+                <Button
+                  variant="secondary"
+                  onClick={() => setScannedData('')}
+                  fullWidth
+                >
+                  {t('cancel')}
+                </Button>
+                <Button
+                  variant="primary"
+                  disabled={isrec}
+                  onClick={handleConfirmReceive}
+                  fullWidth
+                >
+                  {t('confirmWhenOnline')}
+                </Button>
+              </div>
+            </Card>
+          </div>
         )}
 
         {/* Modales de lectura */}
