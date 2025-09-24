@@ -1,0 +1,104 @@
+name: Manual Android with Capacitor
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "android/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: "temurin"
+
+      - name: Set up Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+        with:
+          components: |
+            platforms;android-34
+            build-tools;34.0.0
+            cmdline-tools;latest
+            patcher;v4
+
+      - name: Install system tools
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y imagemagick unzip zipalign
+
+      - name: Install React dependencies
+        run: |
+          npx npm cache clean --force
+          rm -rf node_modules
+          rm -f package-lock.json
+          npm_config_legacy_peer_deps=true npm_config_fund=false npm install
+          npm list vite || true
+
+      - name: Build React project
+        run: |
+          npm run build
+
+      - name: Sync and Install native plugins
+        run: |
+          npx cap copy android
+          npx cap sync android
+
+      - name: Ensure gradle wrapper executable
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+
+      - name: Build Android APK
+        working-directory: android
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+        run: |
+          set -e
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Locate release APK and expose path
+        run: |
+          set -e
+          APK_DIR=android/app/build/outputs/apk/release
+          ls -la "$APK_DIR" || true
+          if [ -f "$APK_DIR/app-release.apk" ]; then
+            APK_PATH="$APK_DIR/app-release.apk"
+          elif [ -f "$APK_DIR/app-release-unsigned.apk" ]; then
+            APK_PATH="$APK_DIR/app-release-unsigned.apk"
+          else
+            APK_PATH=$(ls "$APK_DIR"/*.apk 2>/dev/null | head -n1 || true)
+          fi
+          if [ -z "$APK_PATH" ]; then
+            echo "No se encontró APK de release en $APK_DIR"
+            exit 1
+          fi
+          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
+          echo "Found APK: $APK_PATH"
+
+      - name: Show final artifacts
+        run: |
+          set -e
+          echo "APK_PATH: $APK_PATH" 
+          ls -la android/app/build/outputs/apk/release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HiveCash-app
+          path: |            
+            android/app/build/outputs/apk/release/*.apk
