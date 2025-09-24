@@ -54,6 +54,45 @@ jobs:
 
       - name: Sync and Install native plugins
         run: |
+          set -e
+          SRC_FAVICON=dist/favicon.png
+          if [ ! -f "$SRC_FAVICON" ]; then
+            SRC_FAVICON=dist/favicon.pg
+          fi
+          if [ ! -f "$SRC_FAVICON" ]; then
+            SRC_FAVICON=dist/favicon.ico
+          fi
+          if [ ! -f "$SRC_FAVICON" ]; then
+            echo "Favicon no encontrado en HCFront/dist. Abortando."
+            exit 1
+          fi
+          RES_DIR=android/app/src/main/res
+          mkdir -p "$RES_DIR"
+
+          declare -A sizes=( ["mipmap-mdpi"]=48 ["mipmap-hdpi"]=72 ["mipmap-xhdpi"]=96 ["mipmap-xxhdpi"]=144 ["mipmap-xxxhdpi"]=192 )
+
+          for folder in "${!sizes[@]}"; do
+            size=${sizes[$folder]}
+            target_dir="$RES_DIR/$folder"
+            mkdir -p "$target_dir"
+            convert "$SRC_FAVICON" -resize ${size}x${size} "$target_dir/ic_launcher_foreground.png"
+            convert -size ${size}x${size} canvas:none "$target_dir/ic_launcher_background.png"
+          done
+
+          ADAPTIVE_DIR="$RES_DIR/mipmap-anydpi-v26"
+          mkdir -p "$ADAPTIVE_DIR"
+          cat > "$ADAPTIVE_DIR/ic_launcher.xml" <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+          <background android:drawable="@mipmap/ic_launcher_background"/>
+          <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+          </adaptive-icon>
+          XML
+
+          if [ -f "$ADAPTIVE_DIR/ic_launcher.png" ]; then
+            rm -f "$ADAPTIVE_DIR/ic_launcher.png"
+          fi
+          
           npx cap copy android
           npx cap sync android
 
